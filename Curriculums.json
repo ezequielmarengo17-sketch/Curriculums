@@ -1,0 +1,394 @@
+{
+  "name": "Curriculums",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour",
+              "minute": 15
+            }
+          ]
+        },
+        "output": "raw",
+        "filters": {
+          "custom": "=hasAttachments eq true and (contains(subject,'CV') or contains(subject,'Curriculum') or contains(subject,'Búsqueda laboral') or contains(subject,'Postulación') or contains(subject,'Curriculum Vitae'))",
+          "hasAttachments": true
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlookTrigger",
+      "typeVersion": 1,
+      "position": [
+        528,
+        512
+      ],
+      "id": "3f727a23-94e4-4757-8b00-acd30274a710",
+      "name": "Microsoft Outlook Trigger",
+      "alwaysOutputData": false,
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "EGim6gk1jOlctYcA",
+          "name": "Microsoft Outlook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-pro-latest",
+          "mode": "list",
+          "cachedResultName": "models/gemini-pro-latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Eres un experto en análisis de datos. Analiza el siguiente currículum y extrae la siguiente información en formato JSON con estos campos exactos:\n\nNombre_Completo\nEmail_Contacto (busca el correo electrónico aunque esté escrito de forma no estándar, por ejemplo: \"nombre [arroba] dominio.com\" o \"nombre(at)dominio.com\")\nTelefono_Contacto (busca el número de teléfono aunque esté con espacios, guiones o paréntesis)\nAños_Experiencia\nPuesto_Objetivo\nÚltima_Empresa\nHabilidades_Clave (como una lista separada por comas)\nSi algún dato no está presente, deja el campo vacío (\"\").\n\nPlan de estudios:\n{{ $json.attachment_0 }}\n\nDevuelve solo el JSON con los campos solicitados, sin ningún texto adicional.\n\nde salida:\n\n{\n  \"Nombre_Completo\": \"Juan Pérez\",\n  \"Email_Contacto\": \"juan@email.com\",\n  \"Telefono_Contacto\": \"+54 9 11 1234-5678\",\n  \"Años_Experiencia\": \"5\",\n  \"Puesto_Objetivo\": \"Desarrollador\",\n  \"Última_Empresa\": \"Empresa S.A.\",\n  \"Habilidades_Clave\": \"JavaScript, Node.js, React\"\n}"
+            }
+          ]
+        },
+        "simplify": false,
+        "jsonOutput": true,
+        "options": {}
+      },
+      "id": "188f51a7-d5b0-4113-96ec-d580ecb722be",
+      "name": "Analyze CV with Gemini",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        1792,
+        496
+      ],
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5,
+      "notesInFlow": false,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "4SJHNa4qFGe5CLUT",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      attachment_0: $json.attachment_0\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1584,
+        1008
+      ],
+      "id": "0f1170df-4914-4c99-95ba-760bec90ef02",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "attachment_0",
+        "destinationKey": "=attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        464
+      ],
+      "id": "bfcf31e3-2bbd-4313-9953-1596f20009f4",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.candidates[0].content.parts[0].text;\nlet data = {};\ntry {\n  data = JSON.parse(raw);\n} catch (e) {\n  const match = raw.match(/{[\\s\\S]*}/);\n  if (match) {\n    data = JSON.parse(match[0]);\n  }\n}\nreturn [{ json: data }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2096,
+        1008
+      ],
+      "id": "01a96b63-36c9-4086-aa56-746cdba0ed04",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1DMNElNNXSb2eEycWRTmu7fiD7ikylXgMCUY3mpObla0",
+          "mode": "list",
+          "cachedResultName": "Datos curriculum",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DMNElNNXSb2eEycWRTmu7fiD7ikylXgMCUY3mpObla0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DMNElNNXSb2eEycWRTmu7fiD7ikylXgMCUY3mpObla0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Nombre_Completo",
+              "displayName": "Nombre_Completo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email_Contacto",
+              "displayName": "Email_Contacto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Años_Experiencia",
+              "displayName": "Años_Experiencia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Puesto_Objetivo",
+              "displayName": "Puesto_Objetivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Última_Empresa",
+              "displayName": "Última_Empresa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Habilidades_Clave",
+              "displayName": "Habilidades_Clave",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2320,
+        480
+      ],
+      "id": "1e9ead4e-f8f0-45d8-a810-81fb78a27b68",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "AQR0kfgCDgcF9Pi8",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "messageAttachment",
+        "operation": "download",
+        "messageId": {
+          "__rl": true,
+          "value": "={{ $('Microsoft Outlook Trigger').item.json.id }}",
+          "mode": "id"
+        },
+        "attachmentId": {
+          "__rl": true,
+          "value": "={{ $json[\"['@odata.type']\"] }}",
+          "mode": "id"
+        },
+        "binaryPropertyName": "attachment_0"
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        992
+      ],
+      "id": "cd09a09b-be7a-4bd1-a499-4d1d20240a14",
+      "name": "Download an attachment",
+      "webhookId": "0f3b1ed7-5458-4b20-8c78-8bf5488498cd",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "EGim6gk1jOlctYcA",
+          "name": "Microsoft Outlook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "messageAttachment",
+        "operation": "getAll",
+        "messageId": {
+          "__rl": true,
+          "value": "={{$json.id}}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        672,
+        944
+      ],
+      "id": "b49edaff-8bdf-4ce7-acd2-711e24e353d8",
+      "name": "Get many attachments",
+      "webhookId": "b6df321d-d950-4d34-a6b2-852565bf4587",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "EGim6gk1jOlctYcA",
+          "name": "Microsoft Outlook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "=['@odata.type']",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        928,
+        480
+      ],
+      "id": "85ddc5ea-d1ad-4b41-8175-66274445d7f4",
+      "name": "Split Out"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Analyze CV with Gemini": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Microsoft Outlook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Analyze CV with Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download an attachment": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many attachments": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Download an attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "37425863-592c-4e31-8baf-e1648e5c8403",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "daab3aa09bce4ff3041f8e874af1a45c46ae5871f99610a30f310a85a24c8f41"
+  },
+  "id": "OgQoWYDEYwfQ2NI7",
+  "tags": []
+}
